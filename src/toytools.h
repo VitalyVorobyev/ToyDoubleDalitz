@@ -37,7 +37,7 @@ class ToyTools {
     /// \param idx
     /// \return
     ///
-    ROOT::Minuit2::MnUserParameterState Fit(const int idx = -1);
+    ROOT::Minuit2::MnUserParameterState Fit(int idx = -1);
     ///
     /// \brief Generate
     /// \param type
@@ -45,8 +45,7 @@ class ToyTools {
     /// \param silent
     /// \return
     ///
-    int Generate(const unsigned type, const int idx = -1,
-                 const bool silent = false);
+    int Generate(unsigned type, int idx = -1, bool silent = false);
     ///
     /// \brief ToySim
     /// \return
@@ -56,14 +55,14 @@ class ToyTools {
     /// \brief GetPdf
     /// \return
     ///
-    libTatami::AbsICPVPdf* GetPdf(void);
+    std::unique_ptr<libTatami::AbsICPVPdf> GetPdf(void);
     ///
     /// \brief FillEvt
     /// \param evt
     /// \param ps
     /// \return
     ///
-    int FillEvt(libTatami::ICPVEvt* evt,
+    int FillEvt(libTatami::ICPVEvt& evt,
                 const ROOT::Minuit2::MnUserParameterState& ps);
     ///
     /// \brief init
@@ -81,7 +80,7 @@ class ToyTools {
     bool fix_phases;
     std::string tree_name;
     bool betafit;
-    libTatami::AbsICPVPdf* pdf;
+    std::unique_ptr<libTatami::AbsICPVPdf> pdf;
 
     ROOT::Minuit2::MnUserParameterState nullstate;
 };

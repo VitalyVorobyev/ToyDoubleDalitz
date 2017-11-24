@@ -6,9 +6,10 @@
 
 #include <iostream>
 
-typedef libTatami::AbsICPVPdf Pdf;
-typedef libTatami::ICPVEvt Evt;
-typedef std::string str;
+using Pdf = libTatami::AbsICPVPdf;
+using Evt = libTatami::ICPVEvt;
+using str = std::string;
+
 using DDlz::DDlzBinStruct;
 
 using std::cout;
@@ -19,9 +20,9 @@ const int DDPdf::m_fl_type = 1;
 const int DDPdf::m_cp_type = 2;
 const int DDPdf::m_dd_type = 3;
 
-DDPdf::DDPdf(const Evt& evt, Pdf *pdf, const double &phi1, const double& wt,
+DDPdf::DDPdf(const Evt& evt, Pdf &pdf, double phi1, double wt,
              const str& dconf, const str& bconf) :
-    DDlzBinStruct(pdf->tau(), pdf->dm(), phi1, wt, dconf, bconf),
+    DDlzBinStruct(pdf.tau(), pdf.dm(), phi1, wt, dconf, bconf),
     m_pdf(pdf),
     m_dt(0.), m_cp(0), m_flv(0), m_binb(0), m_bind(0),
     m_use_dilut(false) {
@@ -51,28 +52,28 @@ int DDPdf::get_type(void) const {
                               return m_dd_type;
 }
 
-void DDPdf::set_coefs(const int type) {
+void DDPdf::set_coefs(int type) {
     switch (type) {
     case m_fl_type:
-        m_pdf->SetC(CosCoefFlv(m_flv));
-        m_pdf->SetS(SinCoefFlv());
+        m_pdf.SetC(CosCoefFlv(m_flv));
+        m_pdf.SetS(SinCoefFlv());
         break;
     case m_cp_type:
         if (m_use_dilut) {
-            m_pdf->SetC(DCosCoefCP());
-            m_pdf->SetS(DSinCoefCP(m_flv, m_cp, m_binb));
+            m_pdf.SetC(DCosCoefCP());  // 0
+            m_pdf.SetS(DSinCoefCP(m_flv, m_cp, m_binb));  // ~d
         } else {
-            m_pdf->SetC(CosCoefCP(m_flv, m_binb));
-            m_pdf->SetS(SinCoefCP(m_flv, m_cp, m_binb));
+            m_pdf.SetC(CosCoefCP(m_flv, m_binb));
+            m_pdf.SetS(SinCoefCP(m_flv, m_cp, m_binb));
         }
         break;
     case m_dd_type:
         if (m_use_dilut) {
-            m_pdf->SetC(DCosCoefDD(m_flv, m_bind));
-            m_pdf->SetS(DSinCoefDD(m_flv, m_bind, m_binb));
+            m_pdf.SetC(DCosCoefDD(m_flv, m_bind));
+            m_pdf.SetS(DSinCoefDD(m_flv, m_bind, m_binb));
         } else {
-            m_pdf->SetC(CosCoefDD(m_flv, m_bind, m_binb));
-            m_pdf->SetS(SinCoefDD(m_flv, m_bind, m_binb));
+            m_pdf.SetC(CosCoefDD(m_flv, m_bind, m_binb));
+            m_pdf.SetS(SinCoefDD(m_flv, m_bind, m_binb));
         }
         break;
     default:
@@ -80,22 +81,22 @@ void DDPdf::set_coefs(const int type) {
     }
 }
 
-void DDPdf::Set_tau(const double& x) {
+void DDPdf::Set_tau(double x) {
     DDlzBinStruct::Set_tau(x);
     update_pdf();
 }
 
-void DDPdf::Set_dm(const double& x) {
+void DDPdf::Set_dm(double x) {
     DDlzBinStruct::Set_dm(x);
     update_pdf();
 }
 
 void DDPdf::update_pdf(void) {
-    m_pdf->SetTauDm(m_tau, m_dm);
+    m_pdf.SetTauDm(tau(), dm());
 }
 
 double DDPdf::operator() (const Evt& evt) {
     read_event(evt);
     set_coefs(get_type());
-    return (*m_pdf)(evt);
+    return m_pdf(evt);
 }

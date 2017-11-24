@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <memory>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -14,26 +15,26 @@
 
 #include "./ddfcn.h"
 
-typedef ROOT::Minuit2::MnUserParameterState pstate;
-typedef libTatami::ICPVEvt Evt;
-typedef std::vector<Evt> vectevt;
-typedef libTatami::AbsICPVPdf Pdf;
-typedef std::string str;
+using pstate = ROOT::Minuit2::MnUserParameterState;
+using Evt = libTatami::ICPVEvt;
+using vectevt = std::vector<Evt>;
+using Pdf = libTatami::AbsICPVPdf;
+using str = std::string;
+using TT = ToyTools;
 
 using std::cout;
 using std::endl;
-
 using libTatami::ToyPdf;
 
-typedef ToyTools TT;
+using std::unique_ptr;
+using std::make_unique;
+using std::move;
 
 const double thePI = M_PI;
 const double deg_to_rad = M_PI / 180.;
 const double rad_to_deg = 180. / M_PI;
 
-TT::ToyTools(const ProgOpt& p) : popt(p) {
-    init();
-}
+TT::ToyTools(const ProgOpt& p) : popt(p) { init();}
 
 void TT::init() {
     dconf     = popt.DCfgPath();
@@ -44,12 +45,12 @@ void TT::init() {
     pdf       = GetPdf();
 }
 
-Pdf* TT::GetPdf(void) {
+unique_ptr<Pdf> TT::GetPdf(void) {
     const ExpSetup& st = popt.Setup();
-    ToyPdf* pdf = new ToyPdf(st.mean, st.width, st.fbkg);
+    auto pdf = make_unique<ToyPdf>(st.mean, st.width, st.fbkg);
     pdf->SetRange(popt.dtmax());
     pdf->SetTauDm(popt.btau(), popt.dm());
-    return pdf;
+    return move(pdf);
 }
 
 void TT::Run(void) {
@@ -67,7 +68,7 @@ int TT::Generate() {
     return 0;
 }
 
-int TT::Generate(const unsigned type, const int idx, const bool silent) {
+int TT::Generate(unsigned type, int idx, bool silent) {
     cout << "Angle beta equals " << popt.Beta() << endl;
     popt.Setup().Print();
     const str fname = popt.File(type, idx);
@@ -75,7 +76,7 @@ int TT::Generate(const unsigned type, const int idx, const bool silent) {
     TFile file(fname.c_str(), "RECREATE");
 
     // Prepare generator
-    ToyGen tgen(pdf, phi1, wrtag, dconf, bconf);
+    ToyGen tgen(*pdf, phi1, wrtag, dconf, bconf);
     tgen.SetSilent(silent || true);
     // Generate events
     vectevt evec;
@@ -88,45 +89,42 @@ int TT::Generate(const unsigned type, const int idx, const bool silent) {
         return -1;
     }
 
-    Nev = evec.size();
-    if (!Nev) { cout << "Generate: Zero events" << endl; return -1; }
+    if (evec.empty()) { throw("TT::Generate: Zero events");}
     // Connect generator with the TTree
-    TupleTools tuptool;
-    TTree* tree = tuptool.InitTree(tgen.Event(), tree_name);
+    TTree tree(tree_name.c_str(), tree_name.c_str());
+    TupleTools tuptool(tree, tgen.Event());
     // Fill the TTree
     for (auto event : evec) tuptool.FillTree(event);
-    tree->Write();
+    tree.Write();
     file.Close();
     cout << "tree is written to file " << popt.File(type, idx) << endl;
     return 0;
 }
 
-pstate TT::Fit(const int idx) {
+pstate TT::Fit(int idx) {
     if (idx < 1 && !popt.Fit()) return nullstate;
     cout << "  ** Fit **" << ", " << idx << ", " << popt.Fit() << endl;
     cout << "Angle beta equals " << popt.Beta() << endl;
     popt.Setup().Print();
     // Open data
-    TChain* tree = new TChain(tree_name.c_str());
-    if (popt.FlFit()) tree->Add(popt.FlFile(idx).c_str());
-    if (popt.CPFit()) tree->Add(popt.CPFile(idx).c_str());
-    if (popt.DDFit()) tree->Add(popt.DDFile(idx).c_str());
-    const int Nev = tree->GetEntries();
+    TChain tree(tree_name.c_str());
+    if (popt.FlFit()) tree.Add(popt.FlFile(idx).c_str());
+    if (popt.CPFit()) tree.Add(popt.CPFile(idx).c_str());
+    if (popt.DDFit()) tree.Add(popt.DDFile(idx).c_str());
+    const int Nev = tree.GetEntries();
     if (!Nev) {
         cout << "Tree doesn't contain an event. Exiting..." << endl;
         return nullstate;
     }
     cout << "TTree " << tree_name << " contains " << Nev << " events" << endl;
     // Prepare the fitter
-    DDFitter fitter(tree, pdf, phi1, wrtag, dconf, bconf, popt.Dilut());
+    DDFitter fitter(tree, *pdf, phi1, wrtag, dconf, bconf, popt.Dilut());
     fitter.FixSin(popt.FSin());
     fitter.FixCos(popt.FCos());
     fitter.FixPhases(popt.FPha());
     fitter.FixTau(popt.FTau());
     fitter.FixDm(popt.FDm());
     pstate ps = fitter.Fit();
-
-    delete tree;
     return ps;
 }
 
@@ -135,35 +133,35 @@ int TT::ToySim() {
     cout << "Welcome to ToySim. We are going to perform ";
     cout << popt.NToyExt() << " pseudoexperiments." << endl;
     Evt evt(popt.ToyEvtCfg());
-    TupleTools ttool;
-    TTree* tree = new TTree("toytree", "toytree");
-    ttool.InitTree(evt, tree);
+    TFile file(popt.ToyFitFile().c_str(), "RECREATE");
+    TTree tree("toytree", "toytree");
+    TupleTools ttool(tree, evt);
     for (int i = 1 + popt.FToyExt(); i <= popt.NToyExt() + popt.FToyExt(); i++) {
         cout << " Exp " << i+1 << endl;
-        if (popt.CPFit()) Generate(ProgOpt::CP, i);
-        if (popt.DDFit()) Generate(ProgOpt::DD, i);
+        if (!popt.Dilut()) {
+            if (popt.CPFit()) Generate(ProgOpt::CP, i);
+            if (popt.DDFit()) Generate(ProgOpt::DD, i);
+        }
         const pstate ps = Fit(i);
-        FillEvt(&evt, ps);
+        FillEvt(evt, ps);
         ttool.FillTree(evt);
     }
-    TFile* file = new TFile(popt.ToyFitFile().c_str(), "RECREATE");
-    tree->Write();
-    file->Close();
+    tree.Write();
+    file.Close();
     return 0;
 }
 
-int TT::FillEvt(Evt* evt, const pstate& ps) {
+int TT::FillEvt(Evt& evt, const pstate& ps) {
     const unsigned Npar = ps.Params().size();
     for (unsigned i = 0; i < Npar; i++) {
-        const int ind = evt->FindDVar(ps.GetName(i));
+        const int ind = evt.FindDVar(ps.GetName(i));
         if (ind < 0) {
             cout << "TT::FillEvt: can't find variable " << ps.GetName(i)
                  << endl;
             continue;
         }
-        evt->SetDVar(ind  , ps.Value(i));
-        evt->SetDVar(ind+1, ps.Error(i));
+        evt.SetDVar(ind  , ps.Value(i));
+        evt.SetDVar(ind+1, ps.Error(i));
     }
     return 0;
 }
-

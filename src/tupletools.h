@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+//#include <memory>
 
 #include "mylibs/libTatami/icpvevent.h"
 
@@ -17,7 +18,8 @@
 ///
 class TupleTools {
  public:
-    TupleTools();
+    TupleTools(TTree& tree);
+    TupleTools(TTree& tree, const libTatami::ICPVEvt& evt);
 
   // Output TTree tools //
     ///
@@ -26,13 +28,12 @@ class TupleTools {
     /// \param tname
     /// \return
     ///
-    TTree* InitTree(const libTatami::ICPVEvt& evt, const std::string& tname);
+//    TTree* InitTree(const libTatami::ICPVEvt& evt, const std::string& tname);
     ///
     /// \brief InitTree
     /// \param evt
-    /// \param tree
     ///
-    void InitTree(const libTatami::ICPVEvt& evt, TTree* tree);
+    void InitTree(const libTatami::ICPVEvt& evt);
     ///
     /// \brief FillTree
     /// \param evt
@@ -45,13 +46,13 @@ class TupleTools {
     /// \param tree
     /// \param evt
     ///
-    void ConnectToTree(TTree* tree, const libTatami::ICPVEvt& evt);
+    void ConnectToTree(const libTatami::ICPVEvt& evt);
     ///
     /// \brief ReadEvent
     /// \param nev
     /// \param evt
     ///
-    void ReadEvent(const int nev, libTatami::ICPVEvt* evt);
+    void ReadEvent(int nev, libTatami::ICPVEvt& evt);
 
  private:
     ///
@@ -67,7 +68,8 @@ class TupleTools {
     ///
     /// \brief m_tree
     ///
-    TTree* m_tree;
+//    std::shared_ptr<TTree> m_tree;
+    TTree& m_tree;
     ///
     /// \brief m_iv
     ///

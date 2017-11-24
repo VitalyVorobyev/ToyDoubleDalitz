@@ -25,8 +25,8 @@ class DDPdf: public DDlz::DDlzBinStruct {
     /// \param dconf
     /// \param bconf
     ///
-    DDPdf(const libTatami::ICPVEvt& evt, libTatami::AbsICPVPdf* pdf,
-          const double& phi1, const double &wt, const std::string &dconf,
+    DDPdf(const libTatami::ICPVEvt& evt, libTatami::AbsICPVPdf& pdf,
+          double phi1, double wt, const std::string &dconf,
           const std::string &bconf);
     ///
     /// \brief operator ()
@@ -38,19 +38,19 @@ class DDPdf: public DDlz::DDlzBinStruct {
     /// \brief UseDilut
     /// \param x
     ///
-    void UseDilut(const bool x) {m_use_dilut = x;}
+    void UseDilut(bool x) {m_use_dilut = x;}
 
-    // Overriding methods
+    // Extend methods
     ///
     /// \brief Set_tau
     /// \param x
     ///
-    void Set_tau(const double& x);
+    void Set_tau(double x);
     ///
     /// \brief Set_dm
     /// \param x
     ///
-    void Set_dm(const double& x);
+    void Set_dm(double x);
 
  private:
     void init_indices(const libTatami::ICPVEvt& evt);
@@ -59,7 +59,7 @@ class DDPdf: public DDlz::DDlzBinStruct {
     void set_coefs(const int type);
     void update_pdf(void);
 
-    libTatami::AbsICPVPdf* m_pdf;
+    libTatami::AbsICPVPdf& m_pdf;
 
     double m_dt;
     int m_cp;

@@ -5,37 +5,37 @@
 #include "/home/vitaly/B0toD0pipi/DDTatami/src/ddfcn.h"
 
 #include <iostream>
+#include <algorithm>
 
-typedef libTatami::AbsICPVPdf Pdf;
-typedef libTatami::ICPVEvt Evt;
-typedef std::string str;
-typedef std::vector<double> vectd;
+using Pdf = libTatami::AbsICPVPdf;
+using Evt = libTatami::ICPVEvt;
+using str = std::string;
+using vectd = std::vector<double>;
+
+using std::make_unique;
 
 using std::cout;
 using std::endl;
+using std::max;
+using std::min;
 
-DDFcn::DDFcn(TTree* tree, Pdf* pdf, const double &phi1, const double &wt,
+const str DDFcn::m_evt_conf("params/toyevt.txt");
+
+DDFcn::DDFcn(TTree& tree, Pdf& pdf, double phi1, double wt,
              const str &dconf, const str &bconf):
-    theErrorDef(1.), m_tree(tree), m_raw_pdf(pdf),
-    m_evt(new Evt("params/toyevt.txt")),
-    m_pdf(new DDPdf(*m_evt, m_raw_pdf, phi1, wt, dconf, bconf)),
-    m_tuptool(new TupleTools()),
+    theErrorDef(1.), m_raw_pdf(pdf),
+    m_evt(make_unique<Evt>(m_evt_conf)),
+    m_pdf(make_unique<DDPdf>(*m_evt, m_raw_pdf, phi1, wt, dconf, bconf)),
+    m_tuptool(make_unique<TupleTools>(tree)),
     m_fix_tau(true), m_fix_dm(true), m_fix_phase(true),
     m_fix_sin(false), m_fix_cos(false),
-    m_fix_cp(false), m_use_dilut(false), m_angle(true) {
-    m_tuptool = new TupleTools();
-    m_tuptool->ConnectToTree(m_tree, *m_evt);
-    m_N = m_tree->GetEntries();
+    m_fix_cp(false), m_N(tree.GetEntries()),
+    m_use_dilut(false), m_angle(true) {
+    m_tuptool->ConnectToTree(*m_evt);
     m_pdf->Set_phi1(phi1);
 }
 
-DDFcn::~DDFcn() {
-    delete m_evt;
-    delete m_pdf;
-    delete m_tuptool;
-}
-
-void DDFcn::SetCP(const double& sinv, const double& cosv) {
+void DDFcn::SetCP(double sinv, double cosv) {
     m_pdf->Set_sin2beta(sinv);
     m_pdf->Set_cos2beta(cosv);
 }
@@ -43,9 +43,9 @@ void DDFcn::SetCP(const double& sinv, const double& cosv) {
 double DDFcn::operator()(const vectd& par) const {
     SetParams(par);
     double loglh = 0;
-    for (int i = 0; i < m_N; i++) {
-        m_tuptool->ReadEvent(i, m_evt);
-        const double pdf = (*m_pdf)(*m_evt);
+    for (uint32_t i = 0; i < m_N; i++) {
+        m_tuptool->ReadEvent(i, *m_evt);
+        auto pdf = (*m_pdf)(*m_evt);
         if (!std::isnan(pdf) && pdf > 0) { loglh += -2 * log(pdf);
         } else { cout << "DDFcn: bad pdf :(" << endl;}
     }
@@ -72,26 +72,26 @@ int DDFcn::SetParams(const vectd &par) const {
     if (!m_fix_phase) {
         for (int i = 0; i < 8; i++) {
             if (m_use_dilut) {
-                m_pdf->Set_D_bdlz(i+1, par[ 4+i]);
+                m_pdf->Set_D_bdlz(i+1, max(-1., min(1., par[4+i])));
             } else {
-                m_pdf->Set_C_bdlz(i+1, par[ 4+i]);
-                m_pdf->Set_S_bdlz(i+1, par[12+i]);
+                m_pdf->Set_C_bdlz(i+1, max(-1., min(1., par[4+i])));
+                m_pdf->Set_S_bdlz(i+1, max(-1., min(1., par[12+i])));
             }
         }
     }
     return 0;
 }
 
-void DDFcn::FixSin(const bool x) { m_fix_sin = x;}
-void DDFcn::FixCos(const bool x) { m_fix_cos = x;}
+void DDFcn::FixSin(bool x) { m_fix_sin = x;}
+void DDFcn::FixCos(bool x) { m_fix_cos = x;}
 
-void DDFcn::FixCP(const bool x) {
+void DDFcn::FixCP(bool x) {
     m_fix_sin = x;
     m_fix_cos = x;
     m_fix_cp  = x;
 }
 
-void DDFcn::FixPhases(const bool x) { m_fix_phase = x;}
-void DDFcn::FixTau(const bool x) { m_fix_tau = x;}
-void DDFcn::FixDm(const bool x) { m_fix_dm = x;}
-void DDFcn::UseAngle(const bool x) { m_angle = x;}
+void DDFcn::FixPhases(bool x) { m_fix_phase = x;}
+void DDFcn::FixTau(bool x) { m_fix_tau = x;}
+void DDFcn::FixDm(bool x) { m_fix_dm = x;}
+void DDFcn::UseAngle(bool x) { m_angle = x;}
