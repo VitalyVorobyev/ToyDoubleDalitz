@@ -1,0 +1,12 @@
+p_kp_d0        D p_kp_d0
+pt_kp_d0       D pt_kp_d0
+cos_kp_d0      D cos_kp_d0
+r_kp_d0        D r_kp_d0
+z_kp_d0        D z_kp_d0
+atckpi_kp_d0   D atckpi_kp_d0
+p_km_d0        D p_km_d0
+pt_km_d0       D pt_km_d0
+cos_km_d0      D cos_km_d0
+r_km_d0        D r_km_d0
+z_km_d0        D z_km_d0
+atckpi_km_d0   D atckpi_km_d0

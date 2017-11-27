@@ -1,0 +1,13 @@
+mp_mc           D -99
+mm_mc           D -99
+z_sig_mc        D 0.209553
+z_asc_mc        D 1.3517
+z_upsilon       D 0.112258
+flv_mc          I -1
+flv_d0_mc       I -2
+mdpip_mc        D 10.8724
+mdpim_mc        D 10.2784
+mpipi_mc        D 10.2389
+cos_hel_dpip_mc D 0.76871
+cos_hel_dpim_mc D 0.75677
+cos_hel_pipi_mc D -0.0783158

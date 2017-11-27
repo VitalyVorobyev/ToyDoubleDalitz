@@ -36,7 +36,7 @@ ProgOpt::ProgOpt(void):
     m_sim(false),  m_dil(false),  m_nexp(0), m_fexp(0),
     m_belle(BelleV::ZERO), m_lhcb(LHCbV::ZERO),
     m_d0h0(false),  m_fix_sin(false),  m_fix_cos(false),  m_fix_pha(false),
-    m_fix_tau(true), m_fix_dm(true), m_betafit(false),
+    m_fix_tau(true), m_fix_dm(true), m_betafit(true),
     data_path("data/"), cfg_path("params/"),
     m_phi_gen(23.)
 {}

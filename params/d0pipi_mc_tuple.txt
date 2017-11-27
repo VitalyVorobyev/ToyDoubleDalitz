@@ -1,0 +1,11 @@
+b0id            I -511
+b0f             I 1
+d0id            I 421
+d0f             I 1
+ngen            I 177
+pip_chain       Iv pip_ch
+pim_chain       Iv pim_ch
+d0_chain        Iv d0_ch
+gen_idhep       Iv d
+gen_daF         Iv d
+gen_daL         Iv d

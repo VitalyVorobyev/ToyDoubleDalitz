@@ -27,31 +27,23 @@ using std::cout;
 using std::endl;
 using libTatami::ToyPdf;
 
-using std::unique_ptr;
-using std::make_unique;
-using std::move;
-
-const double thePI = M_PI;
-const double deg_to_rad = M_PI / 180.;
-const double rad_to_deg = 180. / M_PI;
-
 TT::ToyTools(const ProgOpt& p) : popt(p) { init();}
 
 void TT::init() {
     dconf     = popt.DCfgPath();
     bconf     = popt.BCfgPath();
-    phi1      = popt.Beta() * deg_to_rad;
+    phi1      = popt.Beta() * M_PI / 180.;
     wrtag     = popt.Setup().wtag;
     tree_name = popt.TreeName();
     pdf       = GetPdf();
 }
 
-unique_ptr<Pdf> TT::GetPdf(void) {
+std::unique_ptr<Pdf> TT::GetPdf(void) {
     const ExpSetup& st = popt.Setup();
-    auto pdf = make_unique<ToyPdf>(st.mean, st.width, st.fbkg);
+    auto pdf = std::make_unique<ToyPdf>(st.mean, st.width, st.fbkg);
     pdf->SetRange(popt.dtmax());
     pdf->SetTauDm(popt.btau(), popt.dm());
-    return move(pdf);
+    return std::move(pdf);
 }
 
 void TT::Run(void) {
@@ -135,7 +127,6 @@ int TT::ToySim() {
     cout << "Welcome to ToySim. We are going to perform ";
     cout << popt.NToyExt() << " pseudoexperiments." << endl;
     Evt evt(popt.ToyEvtCfg());
-    TFile file(popt.ToyFitFile().c_str(), "RECREATE");
     TTree tree("toytree", "toytree");
     TupleTools ttool(tree, evt);
     for (int i = 1 + popt.FToyExt(); i <= popt.NToyExt() + popt.FToyExt(); i++) {
@@ -148,6 +139,7 @@ int TT::ToySim() {
         FillEvt(evt, ps);
         ttool.FillTree(evt);
     }
+    TFile file(popt.ToyFitFile().c_str(), "RECREATE");
     tree.Write();
     file.Close();
     return 0;
