@@ -6,27 +6,26 @@ import log_parser as lp
 
 def plot_cs():
     """ Fit result for parameters C and S """
-    label_size = 20
+    label_size = 28
     bound = 1.2
-    lbl_offset = (0.09, 0.06)
+    lbl_offset = (0.11, 0.07)
     max_diff = 0.5
 
     plt.rc('text', usetex=True)
-    plt.rc('font', family='serif', size=18)
-    plt.rc('font', size=18)
+    plt.rc('font', family='serif', size=22)
     plt.style.use('seaborn-white')
-    plt.figure(num=None, figsize=(5, 5), dpi=150)
+    plt.figure(num=None, figsize=(4.4, 4), dpi=130)
 
     data, pars = lp.get_cs()
     cgen, cfit, cerr = data[:, 0], data[:, 1], data[:, 2]
     sgen, sfit, serr = data[:, 3], data[:, 4], data[:, 5]
-    print cerr
-    print serr
 
     angles = np.linspace(-np.pi, np.pi)
     plt.plot(np.cos(angles), np.sin(angles), 'r--', linewidth=1.5)
-    plt.plot(cgen, sgen, 'ro', markersize=6)
-    plt.errorbar(cfit, sfit, xerr=cerr, yerr=serr, fmt='bo', markersize=6)
+    plt.plot(cgen, sgen, 'ko', markersize=10, markerfacecolor='None',\
+    markeredgewidth=1)
+    plt.errorbar(cfit, sfit, xerr=cerr, yerr=serr, fmt='bp', markersize=10,\
+    markeredgewidth=1, markeredgecolor='k', capsize=4, ecolor='k')
     plt.tight_layout(pad=1.5)
 
     main_color = 'black'
@@ -40,7 +39,7 @@ def plot_cs():
     lblx = cgen + lbl_offset[0] * np.sign(cgen - cfit) - lbl_offset[1]
     lbly = sgen + lbl_offset[0] * np.sign(sgen - sfit) - lbl_offset[1]
     for xpg, ypg, ipg in zip(lblx, lbly, range(len(lblx))):
-        plt.text(xpg, ypg, str(ipg + 1), color=main_color)
+        plt.text(xpg, ypg, r'$' + str(ipg + 1) + r'$', color=main_color)
 
     plt.axis([-bound, bound, -bound, bound])
 
@@ -56,11 +55,14 @@ def plot_cs():
     plt.gca().set_yticks(minor_ticks, minor=True)
     plt.gca().set_yticks(major_ticks)
 
-    plt.ylabel(r'$S$', fontsize=label_size)
-    plt.xlabel(r'$C$', fontsize=label_size)
+    plt.ylabel(r'$s_j$', fontsize=label_size)
+    plt.xlabel(r'$c_j$', fontsize=label_size)
+    plt.tight_layout(pad=.1)
 
     plt.savefig('pics/csfit_' + str(pars[0]) + str(pars[1]) + '_' + \
      str(pars[2]) + '_' + str(pars[3]) + '.eps', format='eps', dpi=150)
+    plt.savefig('pics/pdf/csfit_' + str(pars[0]) + str(pars[1]) + '_' + \
+     str(pars[2]) + '_' + str(pars[3]) + '.pdf', format='pdf', dpi=150)
 
     plt.show()
 

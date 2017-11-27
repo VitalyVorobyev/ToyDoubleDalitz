@@ -1,5 +1,5 @@
 #! /usr/bin/python
-""" Plot toy MC experiments result """
+""" Plot toy MC experiments result for B0 -> D0h0 """
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,19 +12,14 @@ import ddcfg
 
 def get_toy_data():
     """ Toy MC fit results """
-    print "Type [exp=belle] [gen=1], [beta=22], [ftype=sim], [dil=False]"
+    print "Type [gen=1], [beta=22], [ftype=sim]"
+    ddcfg.LOGDIR += "belle/"
     items = raw_input().strip().split()
-    exp = items[0] if len(items) > 0 else 'belle'
-    if exp == "belle":
-        ddcfg.LOGDIR += "belle/"
-    else:
-        ddcfg.LOGDIR += "lhcbOpt/"
-    epoch = int(items[1]) if len(items) > 1 else 1
-    beta = int(items[2]) if len(items) > 2 else 22
-    ftype = items[3] if len(items) > 3 else 'sim'
-    dil = items[4] if len(items) > 4 else False
-    logexpr = toy.tlog_tplt(beta, "--"+ftype, "--"+exp, epoch, dil)
-    return lp.parse_toy_logs(logexpr), beta, (exp, epoch, ftype, dil)
+    epoch = int(items[0]) if len(items) > 0 else 1
+    beta = int(items[1]) if len(items) > 1 else 22
+    ftype = items[2] if len(items) > 2 else 'sim'
+    logexpr = toy.tlog_d0h0_tplt(beta, "--"+ftype, "--belle", epoch)
+    return [lp.parse_toy_logs(logexpr), beta, (epoch, ftype)]
 
 def get_toy_beta():
     """ Beta toy fit results """
@@ -40,7 +35,7 @@ def get_toy_beta():
     betaf[set1] = betaf[set1] - 180
     betaf[set2] = betaf[set2] + 180
     betap[set3] = (betaf[set3] - beta) / errf[set3]
-    return betaf, betap, beta, pars
+    return [betaf, betap, beta, pars]
 
 def make_hist(data, binn):
     """ Returns histogram with asymmetric Poisson error bars """
@@ -55,8 +50,8 @@ def make_hist(data, binn):
 
 def stat_box_str(mean, err, std):
     """ Make stat box string for a hist """
-    return r"$\mathrm{mean =\ }" + r"{:.2f} \pm {:.2f}$".format(mean, err) + "\n" + \
-    r"$\mathrm{std\ \ \  =\ }" + r"{:.2f}$".format(std)
+    return r'$\mathrm{mean =\ }' + r'{:.2f} \pm {:.2f}$'.format(mean, err) + '\n' + \
+           r'$\mathrm{std\ \ \  =\ }' + r'{:.2f}$'.format(std)
 
 def variance_conf_interval(std, nexp, pval=0.67):
     """ Confidence interval for variance assuming normal distribution """
@@ -74,6 +69,7 @@ def save_fig(fig, figtitle, dpi=150):
 def plot_toy():
     """ Plot toy MC """
     betaf, betap, beta, pars = get_toy_beta()
+    epoch, ftype = pars
     nevent = len(betaf)
     nbins = min(50, nevent / 8)
     bmin, bmax = min(betaf), max(betaf)
@@ -105,22 +101,20 @@ def plot_toy():
     plt.style.use('seaborn-white')
 
     fig1 = plt.figure(num=1, figsize=(4, 4), dpi=dpi)
-    _, caps, _ = plt.errorbar(binf, histf, yerr=errf, fmt='o', markersize=5, ecolor='k', \
-     elinewidth=0.5, capsize=2)
+    _, caps, _ = plt.errorbar(binf, histf, yerr=errf, fmt='o',\
+                 markersize=5, ecolor='k', elinewidth=0.5, capsize=2)
     for cap in caps:
         cap.set_markeredgewidth(1.25)
     plt.plot([beta, beta], [0, max(histf)], 'r-', lw=1.5)
     # plt.text(max(betaf) - 2*stdf, 1.1*max(histf), stat_box_str(meanf, errmf, stdf), fontsize=14)
     plt.xlabel(r'$\beta\ \mathrm{(deg)}$', fontsize=label_size)
     plt.xlim([betalo, betahi])
-    plt.grid(True)
     plt.tight_layout(pad=0.7, w_pad=2.2)
-    figtitle = 'toy_' + pars[0] + str(pars[1]) + '_' + pars[2] + "beta" + str(beta)
-    if pars[3]:
-        figtitle += '_dil'
-    save_fig(fig1, figtitle)
+    plt.grid(True)
 
+    save_fig(fig1, '_'.join(['toy', 'd0h0', str(epoch), ftype, 'beta', str(beta)]))
     fig2 = plt.figure(num=2, figsize=(4, 4), dpi=dpi)
+    plt.grid(True)
     _, caps, _ = plt.errorbar(binp, histp, yerr=errp, fmt='o', markersize=5, ecolor='k', \
      elinewidth=0.5, capsize=2)
     for cap in caps:
@@ -131,14 +125,9 @@ def plot_toy():
     # plt.text(max(betap) - 2*stdp, 1.1*max(histp), stat_box_str(meanp, errmp, stdp), fontsize=14)
     plt.xlabel(r'$\beta\ \mathrm{pull}$', fontsize=label_size)
     plt.xlim([pullmin, pullmax])
-    plt.grid(True)
     plt.tight_layout(pad=0.7, w_pad=2.2)
 
-    figtitle = 'toy_pull_' + pars[0] + str(pars[1]) + '_' + pars[2] + "beta" + str(beta)
-    if pars[3]:
-        figtitle += '_dil'
-    save_fig(fig2, figtitle)
-    
+    save_fig(fig2, '_'.join(['toy_pull', 'd0h0', str(epoch), ftype, 'beta', str(beta)]))
     plt.show()
 
 if __name__ == '__main__':

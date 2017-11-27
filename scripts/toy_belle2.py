@@ -1,3 +1,4 @@
+#! /usr/bin/python
 """ Copyright 2017 Vitaly Vorobyev """
 
 import ddcfg
@@ -14,4 +15,5 @@ def run_toy():
     print fexp
     toy.toy_belle(beta, nexp, fexp, [ftype], ["2"])
 
-run_toy()
+if __name__ == '__main__':
+    run_toy()

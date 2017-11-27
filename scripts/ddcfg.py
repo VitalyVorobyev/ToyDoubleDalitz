@@ -53,6 +53,7 @@ def run_call(args):
 
 def run_check_output(args, killflg=False):
     """ Execute DDTatami using subprocess.check_output """
+    print args
     stdoutput = spr.check_output(args)
     if killflg:
         spr.call(['killall', '-9', DRIVER])

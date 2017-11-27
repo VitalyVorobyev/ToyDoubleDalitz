@@ -6,18 +6,13 @@ import toy
 ddcfg.LOGDIR += "lhcbOpt/"
 ddcfg.set_config(ddcfg.TOPDIR + "params/params_opt.cfg")
 
-def get_params():
-    """ Toy experiment parameters """
-    print "Type [beta=23] [nexp=100] [ftype=sim]"
-    params = raw_input().strip().split()
-    beta = 23 if len(params) < 1 else int(params[0])
-    nexp = 100 if len(params) < 2 else int(params[1])
-    ftype = '--sim' if len(params) < 3 else "--" + params[2]
-    return beta, nexp, ftype
-
 def run_toy():
     """ Toy MC experiment """
-    beta, nexp, ftype = get_params()
-    toy.toy_lhcb(beta, nexp, [ftype], ["2"])
+    beta, nexp, ftype = toy.get_params()
+    fexp = toy.find_max_generated('lhcb', 2, beta)
+    print beta, nexp, ftype
+    print fexp
+    toy.toy_lhcb(beta, nexp, fexp, [ftype], ["2"])
 
-run_toy()
+if __name__ == '__main__':
+    run_toy()

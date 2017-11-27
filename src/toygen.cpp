@@ -1,4 +1,4 @@
-/** Copyright 2016 Vitaly Vorobyev
+/** Copyright 2016-2017 Vitaly Vorobyev
  **
  **/
 
@@ -8,6 +8,7 @@ using std::cout;
 using std::endl;
 using std::to_string;
 using std::make_unique;
+using std::move;
 
 using DDlz::DDlzBinStruct;
 
@@ -34,17 +35,15 @@ void ToyGen::SetCP(double sinv, double cosv) {
     m_dd->Set_cos2beta(cosv);
 }
 
-void ToyGen::PrintDifference(unsigned requested,
-                             unsigned generated) {
-    if (requested != generated) {
-        cout << to_string(requested) << " events requested" << endl;
-        cout << to_string(generated) << " events generated" << endl;
-    }
+void ToyGen::PrintDifference(uint32_t requested, uint32_t generated) {
+    if (requested != generated)
+        cout << to_string(requested) << " events requested" << endl
+             << to_string(generated) << " events generated" << endl;
 }
 
-unsigned ToyGen::GenFl(unsigned N, vectevt* evec) {
+vectevt ToyGen::GenFl(uint32_t N) {
     cout << "ToyGen::GenFl: " << N << " enents" << endl;
-    evec->clear();
+    vectevt evec;
     m_evt->SetIVar("cp", 0);
     m_evt->SetIVar("bind", 0);
     for (int j = 0; j < 2; j++) {  // flv
@@ -63,22 +62,21 @@ unsigned ToyGen::GenFl(unsigned N, vectevt* evec) {
                 }
                 m_pdf.SetS(m_dd->SinCoefFlv());
                 m_pdf.SetC(m_dd->CosCoefFlv(flv));
-                vectd dtv;
-                m_gen->Generate(nev, m_silent);
+                auto dtv = m_gen->Generate(nev, m_silent);
                 for (auto& dt : dtv) {
                     m_evt->SetDVar("dt", dt);
-                    evec->push_back(Evt(*m_evt));
+                    evec.push_back(Evt(*m_evt));
                 }
             }
         }
     }
-    PrintDifference(N, evec->size());
-    return evec->size();
+    PrintDifference(N, evec.size());
+    return move(evec);
 }
 
-unsigned ToyGen::GenCP(unsigned N, vectevt* evec) {
+vectevt ToyGen::GenCP(uint32_t N) {
     cout << "ToyGen::GenCP: " << N << " enents" << endl;
-    evec->clear();
+    vectevt evec;
     m_evt->SetIVar("bind", 0);
     for (int i = 0; i < 2; i++) {  // cp
         const int cp = 2*i-1;
@@ -104,27 +102,27 @@ unsigned ToyGen::GenCP(unsigned N, vectevt* evec) {
                     auto dtv = m_gen->Generate(nev, m_silent);
                     for (auto& dt : dtv) {
                         m_evt->SetDVar("dt", dt);
-                        evec->push_back(Evt(*m_evt));
+                        evec.push_back(Evt(*m_evt));
                     }
                 }
             }
         }
     }
-    PrintDifference(N, evec->size());
-    return evec->size();
+    PrintDifference(N, evec.size());
+    return move(evec);
 }
 
-void ToyGen::SetNorm(unsigned N, vectd* v) const {
+void ToyGen::SetNorm(unsigned N, vectd& v) const {
     double norm0 = 0;
-    for (auto& value : *v) { norm0 += value;}
-    for (auto& value : *v) { value /= norm0 * N;}
-    for (unsigned i = 0; i < v->size(); i++) norm0 += (*v)[i];
-    for (unsigned i = 0; i < v->size(); i++) (*v)[i] /= norm0 * N;
+    for (auto& value : v) { norm0 += value;}
+    for (auto& value : v) { value /= norm0 * N;}
+    for (unsigned i = 0; i < v.size(); i++) norm0 += v[i];
+    for (unsigned i = 0; i < v.size(); i++) v[i] /= norm0 * N;
 }
 
-unsigned ToyGen::GenDD(unsigned N, vectevt* evec) {
+vectevt ToyGen::GenDD(unsigned N) {
     cout << "ToyGen::GenDD: " << N << " enents" << endl;
-    evec->clear();
+    vectevt evec;
     m_evt->SetIVar("cp", 0);
     for (int binb = -8; binb <= 8; binb++) {
         if (binb != 0) {
@@ -149,15 +147,15 @@ unsigned ToyGen::GenDD(unsigned N, vectevt* evec) {
                         auto dtv = m_gen->Generate(nev, m_silent);
                         for (auto& dt : dtv) {
                             m_evt->SetDVar("dt", dt);
-                            evec->push_back(Evt(*m_evt));
+                            evec.push_back(Evt(*m_evt));
                         }
                     }
                 }
             }
         }
     }
-    PrintDifference(N, evec->size());
-    return evec->size();
+    PrintDifference(N, evec.size());
+    return move(evec);
 }
 
 void ToyGen::print_params(void) const {

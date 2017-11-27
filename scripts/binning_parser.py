@@ -36,7 +36,7 @@ def parse_csk(file_name):
     """ Read parameters of binned Dalitz distribution """
     dppar = []
     for line in open(get_path(file_name)).readlines():
-        dppar.append([float(val) for val in FLOATS.findall(line)][:-1])
+        dppar.append([float(val) for val in FLOATS.findall(line)])
     return np.array(dppar)
 
 def print_bin_info(binning, grid_size, masses, limits, titles):

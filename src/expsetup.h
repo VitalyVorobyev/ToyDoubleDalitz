@@ -1,9 +1,11 @@
-/** Copyright 2016 Vitaly Vorobyev
+/** Copyright 2016-2017 Vitaly Vorobyev
  **
  **/
 
 #ifndef _HOME_VITALY_B0TOD0PIPI_DDTATAMI_SRC_EXPSETUP_H_
 #define _HOME_VITALY_B0TOD0PIPI_DDTATAMI_SRC_EXPSETUP_H_
+
+#include <cstdint>
 
 ///
 /// \brief The ExpSetup class
@@ -27,7 +29,7 @@ class ExpSetup {
     /// \brief ScaleStat
     /// \param s
     ///
-    void ScaleStat(const double& s);
+    void ScaleStat(double s);
     ///
     /// \brief AutoScale
     ///
@@ -38,12 +40,12 @@ class ExpSetup {
     double fbkg;
     double wtag;
     double etag;
-    int nCP;
-    int nflv;
-    int nDD;
-    int nCPh0;
-    int nflvh0;
-    int nDDh0;
+    uint32_t nCP;
+    uint32_t nflv;
+    uint32_t nDD;
+    uint32_t nCPh0;
+    uint32_t nflvh0;
+    uint32_t nDDh0;
 };
 
 #endif  // _HOME_VITALY_B0TOD0PIPI_DDTATAMI_SRC_EXPSETUP_H_

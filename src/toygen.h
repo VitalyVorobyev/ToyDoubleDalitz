@@ -1,4 +1,4 @@
-/** Copyright 2016 Vitaly Vorobyev
+/** Copyright 2016-2017 Vitaly Vorobyev
  **
  **/
 
@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <cstdint>
 
 #include "mylibs/libDD/ddlzbinstruct.h"
 #include "mylibs/libTatami/absicpvpdf.h"
@@ -34,19 +35,19 @@ class ToyGen {
     /// \param N
     /// \param evec
     ///
-    unsigned GenFl(unsigned N, std::vector<libTatami::ICPVEvt>* evec);
+    std::vector<libTatami::ICPVEvt> GenFl(uint32_t N);
     ///
     /// \brief GenCP
     /// \param N
     /// \param evec
     ///
-    unsigned GenCP(unsigned N, std::vector<libTatami::ICPVEvt>* evec);
+    std::vector<libTatami::ICPVEvt> GenCP(uint32_t N);
     ///
     /// \brief GenDD
     /// \param N
     /// \param evec
     ///
-    unsigned GenDD(unsigned N, std::vector<libTatami::ICPVEvt>* evec);
+    std::vector<libTatami::ICPVEvt> GenDD(uint32_t N);
     ///
     /// \brief SetCP
     /// \param sinv
@@ -62,7 +63,7 @@ class ToyGen {
     /// \brief SetSeed
     /// \param seed
     ///
-    void SetSeed(unsigned seed) {m_gen->SetSeed(seed);}
+    void SetSeed(uint32_t seed) {m_gen->SetSeed(seed);}
     ///
     /// \brief SetSilent
     /// \param x
@@ -74,8 +75,8 @@ class ToyGen {
     void print_params(void) const;
 
  private:
-    void SetNorm(unsigned N, std::vector<double> *v) const;
-    void PrintDifference(unsigned requested, unsigned generated);
+    void SetNorm(uint32_t N, std::vector<double>& v) const;
+    void PrintDifference(uint32_t requested, uint32_t generated);
 
     libTatami::AbsICPVPdf& m_pdf;
     std::unique_ptr<libTatami::ICPVEvt> m_evt;

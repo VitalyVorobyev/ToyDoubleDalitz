@@ -30,7 +30,7 @@ def flog_d0h0(beta, ftype, exp, epoch, dilut=False):
         logname += '_dil'
     return logname + '_d0h0.txt'
 
-def fit(beta, ftype=None, epod=None):
+def fit(beta, ftype=None, epod=None, dil=False):
     """ Perform fit """
     output_list = []
     if ftype is None:
@@ -40,8 +40,8 @@ def fit(beta, ftype=None, epod=None):
     for exp in epod:
         for epoch in epod[exp]:
             for typ in ftype:
-                log_file = flog(beta, typ, exp, epoch)
-                output_text = ddcfg.run(fpars(beta, typ, exp, epoch))
+                log_file = flog(beta, typ, exp, epoch, dil)
+                output_text = ddcfg.run(fpars(beta, typ, exp, epoch, dil))
                 print "log file:", log_file
                 with open(log_file, 'w') as logfile:
                     logfile.write(output_text)
@@ -66,23 +66,23 @@ def fit_d0h0(beta, ftype=None, epod=None):
                 output_list.append(output_text)
     return output_list
 
-def fit_belle(beta, ftype=None, epochs=None):
-    """ Generate Belle data """
+def fit_belle(beta, ftype=None, epochs=None, dil=False):
+    """ Fit Belle data """
     if epochs is None:
         epochs = ddcfg.BELLE_EPOCHS
-    fit(beta, ftype, {ddcfg.BELLE: epochs})
+    fit(beta, ftype, {ddcfg.BELLE: epochs}, dil)
 
 def fit_belle_d0h0(beta, ftype=None, epochs=None):
-    """ Generate Belle data """
+    """ Fit Belle data """
     if epochs is None:
         epochs = ddcfg.BELLE_EPOCHS
     fit_d0h0(beta, ftype, {ddcfg.BELLE: epochs})
 
-def fit_lhcb(beta, ftype=None, epochs=None):
-    """ Generate LHCb data """
+def fit_lhcb(beta, ftype=None, epochs=None, dil=False):
+    """ Fit LHCb data """
     if epochs is None:
         epochs = ddcfg.LHCB_EPOCHS
-    fit(beta, ftype, {ddcfg.LHCB: epochs})
+    fit(beta, ftype, {ddcfg.LHCB: epochs}, dil)
 
 if __name__ == "__main__":
     ddcfg.go_home()

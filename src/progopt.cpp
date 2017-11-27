@@ -1,4 +1,4 @@
-/** Copyright 2016 Vitaly Vorobyev
+/** Copyright 2016-2017 Vitaly Vorobyev
  **
  **/
 
@@ -9,7 +9,7 @@
 
 #include <boost/program_options.hpp>
 
-typedef std::string str;
+using str = std::string;
 
 namespace po = boost::program_options;
 
@@ -28,16 +28,13 @@ using std::ifstream;
 using std::to_string;
 using std::cerr;
 
-const bool ProgOpt::LHCb  = true;
-const bool ProgOpt::Belle = false;
-
-const unsigned ProgOpt::FL = 1;
-const unsigned ProgOpt::CP = 2;
-const unsigned ProgOpt::DD = 3;
+int m_belle_flg;
+int m_lhcb_flg;
 
 ProgOpt::ProgOpt(void):
     m_gen(false),  m_fit(false),  m_fl(false),  m_cp(false),  m_dd(false),
-    m_sim(false),  m_dil(false),  m_nexp(0), m_fexp(0), m_belle(1),  m_lhcb(0),
+    m_sim(false),  m_dil(false),  m_nexp(0), m_fexp(0),
+    m_belle(BelleV::ZERO), m_lhcb(LHCbV::ZERO),
     m_d0h0(false),  m_fix_sin(false),  m_fix_cos(false),  m_fix_pha(false),
     m_fix_tau(true), m_fix_dm(true), m_betafit(false),
     data_path("data/"), cfg_path("params/"),
@@ -64,9 +61,9 @@ int ProgOpt::Parse(int argc, char** argv) {
      "arg - indedx of the first toy experiment (int)")
     ("beta", value(&m_phi_gen),
      "set value of the angle beta. arg - value (double)")
-    ("belle", value(&m_belle),
+    ("belle", value(&m_belle_flg),
      "configure for Belle conditions. arg: 1 (Belle), 2 (Belle II)")
-    ("lhcb", value(&m_lhcb),
+    ("lhcb", value(&m_lhcb_flg),
      "configure for LHCb conditions. arg: 1 (run I), 2 (run II) or 3 (Upgrade)")
     ("d0h0", "configure for B0 -> D0h0 analysis")
     ("fsin", "fix sin(2beta)")
@@ -169,14 +166,12 @@ int ProgOpt::Parse(int argc, char** argv) {
             m_dd  = true;
             m_fl  = false;
         }
-        if (m_nexp) {
-            m_cp  = true;
-            m_dd  = true;
-        }
 
         if (vm.count("dil")) m_dil = true;
-        if (vm.count("belle")) { m_lhcb  = 0; }
-        if (vm.count("lhcb"))  { m_belle = 0; }
+        if (vm.count("belle")) { m_lhcb  = LHCbV::ZERO;
+                                 m_belle = static_cast<BelleV>(m_belle_flg);}
+        if (vm.count("lhcb"))  { m_belle = BelleV::ZERO;
+                                 m_lhcb = static_cast<LHCbV>(m_lhcb_flg);}
         if (vm.count("d0h0"))  { m_d0h0 = true; m_fix_pha = true; }
         if (vm.count("fsin")) m_fix_sin = true;
         if (vm.count("fcos")) m_fix_cos = true;
@@ -185,33 +180,35 @@ int ProgOpt::Parse(int argc, char** argv) {
     }  // try
     catch (const error &ex) { cerr << ex.what() << endl;}
 
-  if (m_belle) {
+  if (m_belle != BelleV::ZERO) {
       m_setup = m_belle_setup;
       data_path = data_path_belle;
       switch (m_belle) {
-      case 1:  // Belle
+      case BelleV::I:  // Belle
           m_pref = "belle";
           break;
-      case 2:  // Belle II
+      case BelleV::II:  // Belle II
           m_pref = "belleII";
           m_setup.ScaleStat(m_belleII_coef);
           break;
+      case BelleV::ZERO: break;
       }
   } else {
       m_setup = m_lhcb_setup;
       data_path = data_path_lhcb;
       switch (m_lhcb) {
-      case 1:  // LHCb
+      case LHCbV::I:  // LHCb
           m_pref = "lhcb";
           break;
-      case 2:  // LHCb RunII
+      case LHCbV::II:  // LHCb RunII
           m_pref = "lhcbRII";
           m_setup.ScaleStat(m_lhcbII_coef);
           break;
-      case 3:  // LHCb Upgrade
+      case LHCbV::Upg:  // LHCb Upgrade
           m_pref = "lhcbUpgr";
           m_setup.ScaleStat(m_lhcbUp_coef);
           break;
+      case LHCbV::ZERO: break;
       }
   }
 
@@ -222,21 +219,21 @@ int ProgOpt::Parse(int argc, char** argv) {
   return 0;
 }
 
-str ProgOpt::Postfix(const int idx) const {
+str ProgOpt::Postfix(int idx) const {
     str pfx = "_beta" + to_string(static_cast<int>(m_phi_gen));
     if (idx == -1) return pfx + ".root";
     return pfx + "_" + to_string(idx) + ".root";
 }
 
-str ProgOpt::FlFile(const int idx) const {
+str ProgOpt::FlFile(int idx) const {
     return data_path + "fl_" + m_pref + Postfix(idx);
 }
 
-str ProgOpt::CPFile(const int idx) const {
+str ProgOpt::CPFile(int idx) const {
     return data_path + "cp_" + m_pref + Postfix(idx);
 }
 
-str ProgOpt::DDFile(const int idx) const {
+str ProgOpt::DDFile(int idx) const {
     return data_path + "dd_" + m_pref + Postfix(idx);
 }
 
@@ -244,20 +241,22 @@ str ProgOpt::ToyFitFile(void) const {
     return data_path + "fitres" + m_pref + "_" + to_string(m_nexp) + ".root";
 }
 
-str ProgOpt::File(const int type, const int idx) const {
+str ProgOpt::File(DataTypes type, int idx) const {
     switch (type) {
-    case FL: return FlFile(idx);
-    case CP: return CPFile(idx);
-    case DD: return DDFile(idx);
+    case DataTypes::FL: return FlFile(idx);
+    case DataTypes::CP: return CPFile(idx);
+    case DataTypes::DD: return DDFile(idx);
+    default: throw std::invalid_argument("Wrong data type");
     }
     return str("");
 }
 
-unsigned ProgOpt::Nev(const unsigned type) const {
+uint32_t ProgOpt::Nev(DataTypes type) const {
     switch (type) {
-    case FL: return m_setup.nflv;
-    case CP: return m_setup.nCP;
-    case DD: return m_setup.nDD;
+    case DataTypes::FL: return m_setup.nflv;
+    case DataTypes::CP: return m_setup.nCP;
+    case DataTypes::DD: return m_setup.nDD;
+    default: throw std::invalid_argument("Wrong data type");
     }
     return 0;
 }

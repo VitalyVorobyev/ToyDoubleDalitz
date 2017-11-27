@@ -7,6 +7,7 @@
 #include <string>
 #include <cmath>
 #include <memory>
+#include <stdexcept>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -62,13 +63,22 @@ void TT::Run(void) {
 int TT::Generate() {
     if (popt.Toy() || !popt.Gen()) return 0;
     cout << popt.DDFit() << endl;
-    if (popt.FlFit()) Generate(ProgOpt::FL);
-    if (popt.CPFit()) Generate(ProgOpt::CP);
-    if (popt.DDFit()) Generate(ProgOpt::DD);
+    if (popt.FlFit()) Generate(ProgOpt::DataTypes::FL);
+    if (popt.CPFit()) Generate(ProgOpt::DataTypes::CP);
+    if (popt.DDFit()) Generate(ProgOpt::DataTypes::DD);
     return 0;
 }
 
-int TT::Generate(unsigned type, int idx, bool silent) {
+vectevt TT::Generate(ToyGen& gen, ProgOpt::DataTypes type, uint32_t Nev) {
+    switch (type) {
+    case ProgOpt::DataTypes::FL: return gen.GenFl(Nev);
+    case ProgOpt::DataTypes::CP: return gen.GenCP(Nev);
+    case ProgOpt::DataTypes::DD: return gen.GenDD(Nev);
+    default: throw std::invalid_argument("Wrong data type");
+    }
+}
+
+int TT::Generate(ProgOpt::DataTypes type, int idx, bool silent) {
     cout << "Angle beta equals " << popt.Beta() << endl;
     popt.Setup().Print();
     const str fname = popt.File(type, idx);
@@ -79,17 +89,8 @@ int TT::Generate(unsigned type, int idx, bool silent) {
     ToyGen tgen(*pdf, phi1, wrtag, dconf, bconf);
     tgen.SetSilent(silent || true);
     // Generate events
-    vectevt evec;
-    unsigned Nev = popt.Nev(type);
-    if        (type == ProgOpt::FL) {tgen.GenFl(Nev, &evec);
-    } else if (type == ProgOpt::CP) {tgen.GenCP(Nev, &evec);
-    } else if (type == ProgOpt::DD) {tgen.GenDD(Nev, &evec);
-    } else {
-        cout << "Wrong data type " << type;
-        return -1;
-    }
-
-    if (evec.empty()) { throw("TT::Generate: Zero events");}
+    vectevt evec = Generate(tgen, type, popt.Nev(type));
+    if (evec.empty()) { throw;}
     // Connect generator with the TTree
     TTree tree(tree_name.c_str(), tree_name.c_str());
     TupleTools tuptool(tree, tgen.Event());
@@ -101,6 +102,11 @@ int TT::Generate(unsigned type, int idx, bool silent) {
     return 0;
 }
 
+void AddToChain(TChain& ch, const str& fname) {
+    ch.Add(fname.c_str());
+    cout << "File " << fname << " added to chain" << endl;
+}
+
 pstate TT::Fit(int idx) {
     if (idx < 1 && !popt.Fit()) return nullstate;
     cout << "  ** Fit **" << ", " << idx << ", " << popt.Fit() << endl;
@@ -108,15 +114,12 @@ pstate TT::Fit(int idx) {
     popt.Setup().Print();
     // Open data
     TChain tree(tree_name.c_str());
-    if (popt.FlFit()) tree.Add(popt.FlFile(idx).c_str());
-    if (popt.CPFit()) tree.Add(popt.CPFile(idx).c_str());
-    if (popt.DDFit()) tree.Add(popt.DDFile(idx).c_str());
+    if (popt.FlFit()) AddToChain(tree, popt.FlFile(idx));
+    if (popt.CPFit()) AddToChain(tree, popt.CPFile(idx));
+    if (popt.DDFit()) AddToChain(tree, popt.DDFile(idx));
     const int Nev = tree.GetEntries();
-    if (!Nev) {
-        cout << "Tree doesn't contain an event. Exiting..." << endl;
-        return nullstate;
-    }
     cout << "TTree " << tree_name << " contains " << Nev << " events" << endl;
+    if (!Nev) throw("Tree doesn't contain an event");
     // Prepare the fitter
     DDFitter fitter(tree, *pdf, phi1, wrtag, dconf, bconf, popt.Dilut());
     fitter.FixSin(popt.FSin());
@@ -124,8 +127,7 @@ pstate TT::Fit(int idx) {
     fitter.FixPhases(popt.FPha());
     fitter.FixTau(popt.FTau());
     fitter.FixDm(popt.FDm());
-    pstate ps = fitter.Fit();
-    return ps;
+    return fitter.Fit();
 }
 
 int TT::ToySim() {
@@ -139,8 +141,8 @@ int TT::ToySim() {
     for (int i = 1 + popt.FToyExt(); i <= popt.NToyExt() + popt.FToyExt(); i++) {
         cout << " Exp " << i+1 << endl;
         if (!popt.Dilut()) {
-            if (popt.CPFit()) Generate(ProgOpt::CP, i);
-            if (popt.DDFit()) Generate(ProgOpt::DD, i);
+            if (popt.CPFit()) Generate(ProgOpt::DataTypes::CP, i);
+            if (popt.DDFit()) Generate(ProgOpt::DataTypes::DD, i);
         }
         const pstate ps = Fit(i);
         FillEvt(evt, ps);

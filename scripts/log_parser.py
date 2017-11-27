@@ -10,12 +10,19 @@ RAD_TO_DEG = 180. / np.pi
 
 FITRESREX = re.compile(r'.*: -?\d{1}\.\d* -> -?\d{1}\.\d* \+- \d{1}\.\d*')
 
-def fit_regex(exp, gen, ftype):
-    """ Regexpt for log files """
+def fit_regex(exp, gen, ftype, dil=False):
+    """ Regexpt for log files (inclusive angle values) """
+    postfix = 'fit_dil.txt' if dil else 'fit.txt'
     return ddcfg.TOPDIR + "logs/" + ddcfg.DIRDICT[exp] + \
-           "log_*_" + ftype + "_" + exp + "_" + gen + "_fit.txt"
+           '_'.join(['log', '*', ftype, exp, str(gen), postfix])
 
-def get_params():
+def log_path(exp, gen, ftype, angle, dil=False):
+    """ Regexpt for log files """
+    postfix = 'fit_dil.txt' if dil else 'fit.txt'
+    return ddcfg.TOPDIR + "logs/" + ddcfg.DIRDICT[exp] + \
+           "_".join(["log", str(angle), ftype, exp, str(gen), postfix])
+
+def ask_params():
     """ Read command line input """
     print "Type: [Experiment: belle*, lhcb] [generation: 1*, 2, 3] [fittype: sim*, dd]"
     print "( * <- default value )"
@@ -48,6 +55,7 @@ def parse_toy_logs(fnames):
     fit_dict, pul_dict = {}, {}
     print fnames
     for fname in glob.glob(fnames):
+        print fname
         for line in open(fname).readlines():
             if FITRESREX.match(line):
                 info = line.split()
@@ -63,7 +71,10 @@ def parse_toy_logs(fnames):
                     fit_dict[varn] = [fitv]
                     pul_dict[varn] = [(fitv - genv) / errv]
     print len(fit_dict), "variables found"
-    print len(fit_dict["S1"]), "toy experiments found"
+    if 'S1' in fit_dict:
+        print len(fit_dict["S1"]), "toy experiments found"
+    elif 'D1' in fit_dict:
+        print len(fit_dict["D1"]), "toy experiments found"
     return fit_dict, pul_dict
 
 def rad_to_deg(val, err):
@@ -78,7 +89,10 @@ def rad_to_deg(val, err):
 def scan_beta_fit(rexp):
     """ Find and extract info from logs """
     results = []
+    counter = 0
     for fname in glob.glob(rexp):
+        print "logfile", counter, fname
+        counter += 1
         gen_value = float(fname.split("_")[1])
         fitdict = parse_fit_log(fname)
         if 'beta' not in fitdict:
@@ -102,6 +116,38 @@ def get_cs_fit(fname):
             result[-1].append(value)
     return np.array(result)
 
+def get_dil_fit(fname):
+    """ Gen and fit values for dilution factors """
+    fitdict = parse_fit_log(fname)
+    result = []
+    for idx in range(1, 9):
+        result.append([])
+        for value in fitdict["D" + str(idx)]:
+            result[-1].append(value)
+    return np.array(result)
+
+def get_cs():
+    """ np array """
+    exp, gen, ftype = ask_params()
+    if exp == "belle":
+        ddcfg.LOGDIR += "belle/"
+    else:
+        ddcfg.LOGDIR += "lhcbOpt/"
+    beta = input_beta()
+    fname = fit.flog(beta, "--"+ftype, "--"+exp, gen)
+    return get_cs_fit(fname), (exp, gen, ftype, beta)
+
+def get_dil():
+    """ np array """
+    exp, gen, ftype = ask_params()
+    if exp == "belle":
+        ddcfg.LOGDIR += "belle/"
+    else:
+        ddcfg.LOGDIR += "lhcbOpt/"
+    beta = input_beta()
+    fname = fit.flog(beta, "--"+ftype, "--"+exp, gen, dilut=True)
+    return get_dil_fit(fname), (exp, gen, ftype, beta)
+
 def adjust_beta_fit(data):
     """ Elimnate wrong pi distance """
     diff = data[:, 0] - data[:, 1]
@@ -111,25 +157,14 @@ def adjust_beta_fit(data):
     data[set1] = data[set1] + shift
     data[set2] = data[set2] - shift
 
-def get_beta_fit():
+def get_beta_fit(exp, gen, ftype, dil=False):
     """ np array with beta scan fit results """
-    params = get_params()
-    data = scan_beta_fit(fit_regex(*params))
+    data = scan_beta_fit(fit_regex(exp, gen, ftype, dil))
     adjust_beta_fit(data)
-    return params, data
+    return data
 
 def input_beta():
     """ Ask user to type gen beta value """
     print "Type gen value of beta"
     return int(raw_input().strip())
 
-def get_cs():
-    """ np array """
-    exp, gen, ftype = get_params()
-    if exp == "belle":
-        ddcfg.LOGDIR += "belle/"
-    else:
-        ddcfg.LOGDIR += "lhcbOpt/"
-    beta = input_beta()
-    fname = fit.flog(beta, "--"+ftype, "--"+exp, gen)
-    return get_cs_fit(fname), (exp, gen, ftype, beta)

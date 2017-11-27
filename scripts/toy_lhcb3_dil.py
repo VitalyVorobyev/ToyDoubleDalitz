@@ -12,6 +12,6 @@ def run_toy():
     fexp = toy.find_max_generated('lhcb', 3, beta)
     print beta, nexp, ftype
     print fexp
-    toy.toy_lhcb(beta, nexp, fexp, [ftype], ["3"])
+    toy.toy_lhcb(beta, fexp, 0, [ftype], ["3"], True)
 
 run_toy()

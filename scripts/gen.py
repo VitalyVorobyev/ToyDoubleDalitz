@@ -28,7 +28,7 @@ def gen(beta, dtype=None, epod=None):
     """ Generate any data """
     output_list = []
     if dtype is None:
-        dtype = ALTY
+        dtype = DDTY
     if epod is None:
         epod = ddcfg.EPODICT
     for exp in epod:
@@ -46,7 +46,7 @@ def gen_d0h0(beta, dtype=None, epod=None):
     """ Generate any data """
     output_list = []
     if dtype is None:
-        dtype = ALTY
+        dtype = DDTY
     if epod is None:
         epod = ddcfg.EPODICT
     for exp in epod:

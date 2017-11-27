@@ -1,4 +1,4 @@
-/** Copyright 2016 Vitaly Vorobyev
+/** Copyright 2016-2017 Vitaly Vorobyev
  **
  **/
 
@@ -38,7 +38,7 @@ void ExpSetup::Print() const {
     cout << " " << nCPh0 << " " << nflvh0 << endl;
 }
 
-void ExpSetup::ScaleStat(const double& s) {
+void ExpSetup::ScaleStat(double s) {
     nCP *= s;
     nflv *= s;
     nDD *= s;

@@ -45,7 +45,10 @@ class ToyTools {
     /// \param silent
     /// \return
     ///
-    int Generate(unsigned type, int idx = -1, bool silent = false);
+    int Generate(ProgOpt::DataTypes type, int idx = -1, bool silent = false);
+    std::vector<libTatami::ICPVEvt> Generate(ToyGen& gen,
+                                             ProgOpt::DataTypes type,
+                                             uint32_t Nev);
     ///
     /// \brief ToySim
     /// \return

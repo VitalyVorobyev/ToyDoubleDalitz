@@ -1,4 +1,4 @@
-/** Copyright 2016 Vitaly Vorobyev
+/** Copyright 2016-2017 Vitaly Vorobyev
  **
  **/
 
@@ -6,6 +6,7 @@
 #define _HOME_VITALY_B0TOD0PIPI_DDTATAMI_SRC_PROGOPT_H_
 
 #include <string>
+#include <cstdint>
 
 #include "./expsetup.h"
 
@@ -14,6 +15,11 @@
 ///
 class ProgOpt {
  public:
+    enum class Setup : int {Belle = 1, LHCb = 2};
+    enum class DataTypes : int {FL = 1, CP = 2, DD = 3};
+    enum class BelleV : int {ZERO = 0, I = 1, II = 2};
+    enum class LHCbV : int {ZERO = 0, I = 1, II = 2, Upg = 3};
+
     ProgOpt(void);
     /**
      * @brief Parse
@@ -23,9 +29,9 @@ class ProgOpt {
      */
     int Parse(int argc, char **argv);
 
-    int   IsBelle(void) const {return m_belle;}
-    int   IsLHCb (void) const {return m_lhcb;}
-    bool  IsD0h0 (void) const {return m_d0h0;}
+    BelleV IsBelle(void) const {return m_belle;}
+    LHCbV IsLHCb (void) const {return m_lhcb;}
+    bool IsD0h0 (void) const {return m_d0h0;}
     std::string DataPath (void) const {return data_path;}
     std::string DCfgPath(void)  const {return dconf;}
     std::string BCfgPath(void)  const {return bconf;}
@@ -37,8 +43,8 @@ class ProgOpt {
     std::string FlFile(const int idx = -1) const;
     std::string CPFile(const int idx = -1) const;
     std::string DDFile(const int idx = -1) const;
-    std::string File(const int type, const int idx = -1) const;
-    unsigned Nev(const unsigned type) const;
+    std::string File(DataTypes type, const int idx = -1) const;
+    uint32_t Nev(DataTypes type) const;
 
     std::string ToyFitFile(void) const;
 
@@ -74,15 +80,8 @@ class ProgOpt {
 
     std::string ToyEvtCfg(void) const;
 
-    static const bool LHCb;
-    static const bool Belle;
-
-    static const unsigned FL;
-    static const unsigned CP;
-    static const unsigned DD;
-
  private:
-    std::string Postfix(const int idx = -1) const;
+    std::string Postfix(int idx = -1) const;
     void preprocess(void);
   // command line options
     bool m_gen;
@@ -94,8 +93,8 @@ class ProgOpt {
     bool m_dil;
     int  m_nexp;
     int  m_fexp;
-    int  m_belle;
-    int  m_lhcb;
+    BelleV m_belle;
+    LHCbV m_lhcb;
     bool m_d0h0;
     bool m_fix_sin;
     bool m_fix_cos;
